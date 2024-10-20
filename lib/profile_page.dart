@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart'; // Import login page for returning after success
+// Import login page for returning after success
 import 'submit_page.dart';
+import 'success_page.dart'; // Adjust the import based on the actual file location
+
 class ProfilePage extends StatefulWidget {
   @override
   _ProfilePageState createState() => _ProfilePageState();
@@ -51,19 +53,22 @@ class _ProfilePageState extends State<ProfilePage> {
                 labelText: 'Date of Birth',
                 border: OutlineInputBorder(),
               ),
-              onTap: () async {
-                DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(1900),
-                  lastDate: DateTime(2100),
-                );
-                if (pickedDate != null) {
-                  setState(() {
-                    dobController.text = "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
-                  });
-                }
-              },
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime(2100),
+                  );
+
+                  // Check if a date was picked and set the text accordingly
+                  if (pickedDate != null) {
+                    setState(() {
+                      dobController.text = "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
+                    });
+                  }
+                },
+
             ),
             SizedBox(height: 20),
 
@@ -128,6 +133,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   firstDate: DateTime(1900),
                   lastDate: DateTime(2100),
                 );
+
+                // Check if a date was picked and set the text accordingly
                 if (pickedDate != null) {
                   setState(() {
                     weddingAnniversaryController.text = "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
@@ -135,6 +142,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 }
               }
                   : null,
+
             ),
             SizedBox(height: 20),
 
@@ -193,4 +201,20 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
+class SuccessPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Success'),
+      ),
+      body: Center(
+        child: Text(
+          'Profile submitted successfully!',
+          style: TextStyle(fontSize: 24),
+        ),
+      ),
+    );
+  }
+}
 

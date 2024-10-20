@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
-import 'forget_password.dart';
 void main() {
   runApp(ChurchApp());
 

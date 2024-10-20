@@ -1,10 +1,13 @@
+import 'package:church_app/login_page.dart'; // Import your login page
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'success_page.dart'; // Import the success page
-import 'login_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-// Verify Page
 class VerifyPage extends StatefulWidget {
+  final int userId; // Accept userId as an integer
+
+  VerifyPage({required this.userId}); // Constructor to initialize userId
+
   @override
   _VerifyPageState createState() => _VerifyPageState();
 }
@@ -35,23 +38,82 @@ class _VerifyPageState extends State<VerifyPage> {
             ),
             SizedBox(height: 20),
 
-            // Final Verify button to navigate to profile page
+            // Final Verify button
             ElevatedButton(
-              onPressed: () {
-                if (codeController.text.length == 6) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SuccessPage()),
-                  );
-                } else {
-                  _showErrorDialog(context);
-                }
-              },
+              onPressed: _verifyOtp,
               child: Text("Verify"),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // Function to verify the OTP
+  Future<void> _verifyOtp() async {
+    if (codeController.text.length != 6) {
+      _showErrorDialog(context);
+      return;
+    }
+
+    final url = 'http://10.0.2.2:6666/api/user/register/verify/otp'; // Adjust URL if necessary
+    print("URL: " + url);
+    // Prepare the request body
+    final body = json.encode({
+      'user_id': widget.userId, // Pass the user ID
+      'otp_code': codeController.text, // Pass the entered OTP
+    });
+
+    // Send the POST request
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        // Show success message
+        _showSuccessDialog(context);
+      } else {
+        // Handle errors
+        print('Failed to verify: ${response.statusCode} - ${response.reasonPhrase}');
+        print('Response body: ${response.body}'); // Print the response body for debugging
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to verify: ${response.reasonPhrase}'),
+        ));
+      }
+    } catch (error) {
+      // Print detailed error information
+      print('Network error occurred: $error'); // Print the error for debugging
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Network error: $error'),
+      ));
+    }
+  }
+
+  // Display success dialog and navigate to login page
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Registration Successful"),
+          content: Text("You have registered successfully. Please log in."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()), // Navigate to your login page
+                );
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -76,5 +138,3 @@ class _VerifyPageState extends State<VerifyPage> {
     );
   }
 }
-
-

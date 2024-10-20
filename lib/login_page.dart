@@ -1,6 +1,10 @@
+import 'package:church_app/user_page.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'forget_password.dart';
 import 'registration_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -8,7 +12,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController userIdController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   String errorMessage = ''; // To hold the error message
@@ -27,17 +32,27 @@ class _LoginPageState extends State<LoginPage> {
               Text(
                 "Login",
                 style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               SizedBox(height: 20), // Spacing between Login and text fields
 
-              // UserID text field with box style
+              // Phone number text field with box style
               TextField(
-                controller: userIdController,
+                controller: phoneNumberController,
                 decoration: InputDecoration(
-                  labelText: "User ID",
+                  labelText: "Phone Number",
+                  border: OutlineInputBorder(), // Box border
+                ),
+              ),
+              SizedBox(height: 15),
+
+              // Email text field with box style
+              TextField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: "Email",
                   border: OutlineInputBorder(), // Box border
                 ),
               ),
@@ -56,20 +71,7 @@ class _LoginPageState extends State<LoginPage> {
 
               // Login button
               ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    // Check if the UserID or password is incorrect
-                    if (userIdController.text != 'correctUserID' ||
-                        passwordController.text != 'correctPassword') {
-                      errorMessage = 'UserID or Password is incorrect/Register';
-                    } else {
-                      // Clear error message on successful login
-                      errorMessage = '';
-                      // Perform login action (navigate to the next page)
-                      // Navigator.push(...);
-                    }
-                  });
-                },
+                onPressed: _loginUser,
                 child: Text("Login"),
               ),
 
@@ -111,4 +113,64 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+
+  // Function to handle user login
+  Future<void> _loginUser() async {
+    final url = 'http://10.0.2.2:6666/api/user/login'; // Use this URL for the Android emulator
+
+    // Prepare the request body
+    final body = json.encode({
+      'phone_number': phoneNumberController.text,
+      'email': emailController.text,
+      'password': passwordController.text,
+    });
+
+    // Send the POST request
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        // Handle success (e.g., navigate to the User Page)
+        print('Login successful: ${response.body}');
+        final responseData = json.decode(response.body);
+        String token = responseData['token'];
+
+        //store the token in shared_preferences
+        _storeToken(token);
+
+        // Parse the response and navigate to UserPage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => UserPage()),
+        );
+      } else {
+        // Handle errors
+        print('Failed to login: ${response.statusCode} - ${response.reasonPhrase}');
+        setState(() {
+          errorMessage = 'Failed to login: ${response.reasonPhrase}';
+        });
+      }
+    } catch (error) {
+      // Handle network errors
+      print('Network error occurred: $error');
+      setState(() {
+        errorMessage = 'Network error: $error';
+      });
+    }
+  }
+
 }
+
+
+
+
+// Method to store the token
+Future<void> _storeToken(String token) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('userToken', token);  // Store the token
+}
+
