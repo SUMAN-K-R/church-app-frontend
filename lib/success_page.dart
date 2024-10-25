@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'profile_page.dart'; // Import the profile page
+import 'user_profile_page.dart'; // Import the profile page
 
 class SuccessPage extends StatelessWidget {
   @override
@@ -27,10 +27,7 @@ class SuccessPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Navigate to the profile page when the button is pressed
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => ProfilePage()), // Navigate to the profile page
-                );
+
               },
               child: Text("Continue"),
             ),

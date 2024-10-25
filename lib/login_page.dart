@@ -1,4 +1,5 @@
 import 'package:church_app/user_page.dart';
+import 'package:church_app/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -137,16 +138,31 @@ class _LoginPageState extends State<LoginPage> {
         // Handle success (e.g., navigate to the User Page)
         print('Login successful: ${response.body}');
         final responseData = json.decode(response.body);
+        int userId = responseData['user_id'];
         String token = responseData['token'];
+        String userType = responseData['user_type'];
+        bool profileExists = responseData['profile_exists'];
+
 
         //store the token in shared_preferences
-        _storeToken(token);
+        await _storeUserData(token, userType, userId);
 
-        // Parse the response and navigate to UserPage
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => UserPage()),
-        );
+        // Navigate based on profile status
+        if (!profileExists) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserProfilePage(userId: responseData['user_id']),
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserPage(userType: userType),
+            ),
+          );
+        }
       } else {
         // Handle errors
         print('Failed to login: ${response.statusCode} - ${response.reasonPhrase}');
@@ -168,9 +184,10 @@ class _LoginPageState extends State<LoginPage> {
 
 
 
-// Method to store the token
-Future<void> _storeToken(String token) async {
+// Method to store token and user_id
+Future<void> _storeUserData(String token, String userType, int userId) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('userToken', token);  // Store the token
+  await prefs.setString('userType', userType);
+  await prefs.setInt('userId', userId);       // Store the user_id
 }
-
