@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class MyDonationsPage extends StatefulWidget {
   final int userId; // User ID to fetch donations for
@@ -26,7 +28,7 @@ class _MyDonationsPageState extends State<MyDonationsPage> {
     final token = prefs.getString('userToken') ?? '';
     final userID = prefs.getInt('userId') ?? '';
 
-    final url = 'http://10.0.2.2:6666/api/user/donation/${userID}'; // Adjust accordingly
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/donation/${userID}'; // Adjust accordingly
     final response = await http.get(
       Uri.parse(url),
       headers: {

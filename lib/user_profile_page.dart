@@ -3,6 +3,8 @@ import 'package:church_app/user_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,7 +40,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _saveProfile() async {
-    final url = 'http://10.0.2.2:6666/api/user/user-profile';
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile';
 
     final dateOfBirth = DateTime.parse(dateOfBirthController.text);
     final formattedDateOfBirth = dateOfBirth.toIso8601String();

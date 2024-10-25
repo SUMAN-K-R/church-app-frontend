@@ -4,6 +4,8 @@ import 'package:church_app/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class VerifyPage extends StatefulWidget {
   final int userId;
@@ -54,7 +56,7 @@ class _VerifyPageState extends State<VerifyPage> {
       return;
     }
 
-    final url = 'http://10.0.2.2:6666/api/user/register/verify/otp';
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/register/verify/otp';
     final body = json.encode({
       'user_id': widget.userId,
       'otp_code': codeController.text,

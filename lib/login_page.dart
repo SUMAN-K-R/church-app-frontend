@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'forget_password.dart';
 import 'registration_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class LoginPage extends StatefulWidget {
   @override
@@ -117,8 +119,9 @@ class _LoginPageState extends State<LoginPage> {
 
   // Function to handle user login
   Future<void> _loginUser() async {
-    final url = 'http://10.0.2.2:6666/api/user/login'; // Use this URL for the Android emulator
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/login'; // Use this URL for the Android emulator
 
+    print("url: " + url);
     // Prepare the request body
     final body = json.encode({
       'phone_number': phoneNumberController.text,

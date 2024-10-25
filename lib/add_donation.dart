@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,7 +26,7 @@ class _AddDonationPageState extends State<AddDonationPage> {
   }
 
   Future<void> _fetchUsers() async {
-    final url = 'http://10.0.2.2:6666/api/user/donation-user-list';
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/donation-user-list';
 
     // Retrieve the token from shared preferences
     final prefs = await SharedPreferences.getInstance();
@@ -77,7 +79,7 @@ class _AddDonationPageState extends State<AddDonationPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('userToken') ?? '';
 
-    final url = 'http://10.0.2.2:6666/api/user/donation';
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/donation';
     final response = await http.post(
       Uri.parse(url),
       headers: {

@@ -2,6 +2,8 @@ import 'package:church_app/verification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class RegistrationPage extends StatefulWidget {
   @override
@@ -93,7 +95,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   // Function to register the user and generate OTP
   Future<void> _registerUser() async {
-    final url = 'http://10.0.2.2:6666/api/user/register'; // Use this URL for the Android emulator
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/register'; // Use this URL for the Android emulator
 
     // Prepare the request body
     final body = json.encode({

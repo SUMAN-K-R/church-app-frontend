@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
-void main() {
-  runApp(ChurchApp());
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+Future<void> main() async {
+  // Ensure that widget binding is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+  runApp(ChurchApp());
 }
 
 class ChurchApp extends StatelessWidget {
@@ -16,14 +21,12 @@ class ChurchApp extends StatelessWidget {
   }
 }
 
-
 class ChurchSymbolScreen extends StatefulWidget {
   @override
   _ChurchSymbolScreenState createState() => _ChurchSymbolScreenState();
 }
 
 class _ChurchSymbolScreenState extends State<ChurchSymbolScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -35,6 +38,7 @@ class _ChurchSymbolScreenState extends State<ChurchSymbolScreen> {
       );
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,14 +48,13 @@ class _ChurchSymbolScreenState extends State<ChurchSymbolScreen> {
           children: [
             Icon(Icons.church, size: 100), // Church symbol as an icon
             SizedBox(height: 20),
-            Text("Welcome to Our Church ", style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,)
-             ),
+            Text(
+              "Welcome to Our Church",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-
-

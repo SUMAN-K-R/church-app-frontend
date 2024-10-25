@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class UserPage extends StatefulWidget {
   final String userType; // Add a field for user_type
@@ -30,7 +32,7 @@ class _UserPageState extends State<UserPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('userToken') ?? '';
 
-    final url = 'http://10.0.2.2:6666/api/user/donation/total'; // Adjust accordingly
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/donation/total'; // Adjust accordingly
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -52,7 +54,7 @@ class _UserPageState extends State<UserPage> {
 
   // Fetch news from API
   Future<void> _fetchNews() async {
-    final url = 'http://10.0.2.2:6666/api/news'; // Replace with your actual API endpoint
+    final url = '${dotenv.env['BACKEND_URL']}/api/news'; // Replace with your actual API endpoint
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
