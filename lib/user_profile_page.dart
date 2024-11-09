@@ -1,12 +1,8 @@
-import 'package:church_app/login_page.dart';
-import 'package:church_app/user_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-
-import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProfilePage extends StatefulWidget {
   final int userId;
@@ -18,156 +14,225 @@ class UserProfilePage extends StatefulWidget {
 }
 
 class _UserProfilePageState extends State<UserProfilePage> {
-  final TextEditingController fullNameController = TextEditingController();
-  final TextEditingController dateOfBirthController = TextEditingController();
-  final TextEditingController weddingAnniversaryController = TextEditingController();
-  String maritalStatus = 'Single';
-  String gender = 'Male';
-  final TextEditingController professionController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _fullNameController;
+  late TextEditingController _professionController;
+  late TextEditingController _dateOfBirthController;
+  late TextEditingController _maritalStatusController;
+  String? _gender;
 
-  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+  bool _isLoading = false;
+  bool _isUpdated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fullNameController = TextEditingController();
+    _professionController = TextEditingController();
+    _dateOfBirthController = TextEditingController();
+    _maritalStatusController = TextEditingController();
+
+    // Fetch the user profile data
+    _fetchUserProfile();
+  }
+
+  // Fetch user profile details
+  Future<void> _fetchUserProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('userToken') ?? '';
+
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile/${widget.userId}'; // Adjust endpoint
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
     );
-    if (picked != null) {
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
       setState(() {
-        controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        _fullNameController.text = data['full_name'];
+        _professionController.text = data['profession'];
+        _dateOfBirthController.text = data['date_of_birth'];
+        _maritalStatusController.text = data['marital_status'];
+        _gender = data['gender'];
       });
+    } else {
+      print('Failed to load user profile');
     }
   }
 
-  Future<void> _saveProfile() async {
-    final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile';
-
-    // Validate the Date of Birth
-    if (dateOfBirthController.text.isEmpty || !RegExp(r"^\d{4}-\d{2}-\d{2}$").hasMatch(dateOfBirthController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Please enter a valid date of birth (YYYY-MM-DD)'),
-      ));
-      return;
-    }
-
-    final dateOfBirth = DateTime.parse(dateOfBirthController.text);
-    final formattedDateOfBirth = dateOfBirth.toIso8601String();
-
-    // Initialize weddingAnniversary as null and will not include if maritalStatus is not 'Married'
-    String? trimmedWeddingAnniversay;
-
-    if (maritalStatus == 'Married') {
-      if (weddingAnniversaryController.text.isEmpty || !RegExp(r"^\d{4}-\d{2}-\d{2}$").hasMatch(weddingAnniversaryController.text)) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Please enter a valid wedding anniversary date (YYYY-MM-DD)'),
-        ));
-        return;
-      }
-      final weddingAnniversary = DateTime.parse(weddingAnniversaryController.text);
-      final formattedWeddingAnniversary = weddingAnniversary.toIso8601String();
-      trimmedWeddingAnniversay = formattedWeddingAnniversary.split('.').first + 'Z';
-    }
-
-    final String trimmedDateOfBirth = formattedDateOfBirth.split('.').first + 'Z';
-
-    final body = json.encode({
-      'user_id': widget.userId,
-      'full_name': fullNameController.text,
-      'date_of_birth': trimmedDateOfBirth,
-      'marital_status': maritalStatus,
-      'wedding_anniversary': maritalStatus == 'Married' ? trimmedWeddingAnniversay : null,
-      'gender': gender,
-      'profession': professionController.text,
+  // Update user profile
+  Future<void> _updateUserProfile() async {
+    setState(() {
+      _isLoading = true;
     });
 
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('userToken') ?? '';
 
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile/update';
+    final body = json.encode({
+      'user_id': widget.userId,
+      'full_name': _fullNameController.text,
+      'date_of_birth': _dateOfBirthController.text,
+      'gender': _gender,
+      'profession': _professionController.text,
+      'marital_status': _maritalStatusController.text,
+    });
 
-    try {
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: body,
+    );
 
-      // Retrieve the token from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('userToken') ?? '';
-      final userType = prefs.getString('userType') ?? '';
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': '$token',
-        },
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => UserPage(userType: userType)),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to save profile: ${response.reasonPhrase}'),
-        ));
-      }
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Network error: $error'),
-      ));
+    if (response.statusCode == 200) {
+      setState(() {
+        _isUpdated = true;
+      });
+    } else {
+      print('Failed to update profile');
     }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _professionController.dispose();
+    _dateOfBirthController.dispose();
+    _maritalStatusController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Enter Personal Details"),
+        title: Text('My Profile'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: fullNameController,
-              decoration: InputDecoration(labelText: "Full Name"),
-            ),
-            TextField(
-              controller: dateOfBirthController,
-              readOnly: true,
-              onTap: () => _selectDate(context, dateOfBirthController),
-              decoration: InputDecoration(labelText: "Date of Birth (YYYY-MM-DD)"),
-            ),
-            DropdownButtonFormField(
-              value: maritalStatus,
-              items: ['Single', 'Married', 'Divorced', 'Widowed']
-                  .map((status) => DropdownMenuItem(value: status, child: Text(status)))
-                  .toList(),
-              onChanged: (value) => setState(() => maritalStatus = value!),
-              decoration: InputDecoration(labelText: "Marital Status"),
-            ),
-            if (maritalStatus == 'Married')
-              TextField(
-                controller: weddingAnniversaryController,
-                readOnly: true,
-                onTap: () => _selectDate(context, weddingAnniversaryController),
-                decoration: InputDecoration(labelText: "Wedding Anniversary (YYYY-MM-DD)"),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Full Name',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            DropdownButtonFormField(
-              value: gender,
-              items: ['Male', 'Female', 'Other']
-                  .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                  .toList(),
-              onChanged: (value) => setState(() => gender = value!),
-              decoration: InputDecoration(labelText: "Gender"),
-            ),
-            TextField(
-              controller: professionController,
-              decoration: InputDecoration(labelText: "Profession"),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveProfile,
-              child: Text("Save"),
-            ),
-          ],
+              TextFormField(
+                controller: _fullNameController,
+                decoration: InputDecoration(
+                  hintText: 'Enter your full name',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your full name';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Profession',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              TextFormField(
+                controller: _professionController,
+                decoration: InputDecoration(
+                  hintText: 'Enter your profession',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your profession';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Date of Birth',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              TextFormField(
+                controller: _dateOfBirthController,
+                decoration: InputDecoration(
+                  hintText: 'Enter your date of birth (YYYY-MM-DD)',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your date of birth';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Marital Status',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              TextFormField(
+                controller: _maritalStatusController,
+                decoration: InputDecoration(
+                  hintText: 'Enter your marital status',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your marital status';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Gender',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              DropdownButton<String>(
+                value: _gender,
+                hint: Text('Select Gender'),
+                items: ['Male', 'Female', 'Other']
+                    .map((gender) => DropdownMenuItem(
+                  value: gender,
+                  child: Text(gender),
+                ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _gender = value;
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    _updateUserProfile();
+                  }
+                },
+                child: Text('Update Profile'),
+              ),
+              SizedBox(height: 10),
+              if (_isUpdated)
+                Text(
+                  'Profile updated successfully!',
+                  style: TextStyle(color: Colors.green),
+                ),
+            ],
+          ),
         ),
       ),
     );

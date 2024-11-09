@@ -1,6 +1,7 @@
 import 'package:church_app/add_donation.dart';
 import 'package:church_app/login_page.dart';
 import 'package:church_app/user_donation.dart';
+import 'package:church_app/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -95,17 +96,39 @@ class _UserPageState extends State<UserPage> {
 
 
   // Add this method in the UserPage class
-  void _navigateToMyDonations() {
-    // Assuming userID is available in the context, if not, retrieve it accordingly
-    // Here we will assume that you have the userID stored in shared preferences or passed from login
-    final userId = 1; // Replace with the actual user ID
+  void _navigateToMyDonations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('userId') ?? 0; // Retrieve userId from shared preferences, default to 0 if not found
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MyDonationsPage(userId: userId),
-      ),
-    );
+    if (userId != 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MyDonationsPage(userId: userId),
+        ),
+      );
+    } else {
+      // Handle the case when userId is not found, maybe show an error or prompt for login
+      print("User ID not found. Please log in again.");
+    }
+  }
+
+
+  void _navigateToMyProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('userId') ?? 0;
+
+
+    if (userId != 0){
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserProfilePage(userId: userId),
+        ),
+      );
+    } else {
+      print("User ID not found. Please log in again");
+    }
   }
 
   @override

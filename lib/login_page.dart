@@ -1,5 +1,5 @@
 import 'package:church_app/user_page.dart';
-import 'package:church_app/user_profile_page.dart';
+import 'package:church_app/user_profile_register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -155,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => UserProfilePage(userId: responseData['user_id']),
+              builder: (context) => UserProfileRegisterPage(userId: responseData['user_id']),
             ),
           );
         } else {

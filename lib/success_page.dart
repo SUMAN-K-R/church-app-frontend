@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'user_profile_page.dart'; // Import the profile page
+import 'user_profile_register_page.dart'; // Import the profile page
 
 class SuccessPage extends StatelessWidget {
   @override
