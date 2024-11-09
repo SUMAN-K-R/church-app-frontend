@@ -42,16 +42,33 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Future<void> _saveProfile() async {
     final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile';
 
+    // Validate the Date of Birth
+    if (dateOfBirthController.text.isEmpty || !RegExp(r"^\d{4}-\d{2}-\d{2}$").hasMatch(dateOfBirthController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Please enter a valid date of birth (YYYY-MM-DD)'),
+      ));
+      return;
+    }
+
     final dateOfBirth = DateTime.parse(dateOfBirthController.text);
     final formattedDateOfBirth = dateOfBirth.toIso8601String();
 
+    // Initialize weddingAnniversary as null and will not include if maritalStatus is not 'Married'
+    String? trimmedWeddingAnniversay;
 
-    final weddingAnniversary = DateTime.parse(weddingAnniversaryController.text);
-    final formattedWeddingAnniversary = weddingAnniversary.toIso8601String();
+    if (maritalStatus == 'Married') {
+      if (weddingAnniversaryController.text.isEmpty || !RegExp(r"^\d{4}-\d{2}-\d{2}$").hasMatch(weddingAnniversaryController.text)) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Please enter a valid wedding anniversary date (YYYY-MM-DD)'),
+        ));
+        return;
+      }
+      final weddingAnniversary = DateTime.parse(weddingAnniversaryController.text);
+      final formattedWeddingAnniversary = weddingAnniversary.toIso8601String();
+      trimmedWeddingAnniversay = formattedWeddingAnniversary.split('.').first + 'Z';
+    }
 
-    // Remove milliseconds for backend compatibility
     final String trimmedDateOfBirth = formattedDateOfBirth.split('.').first + 'Z';
-    final String trimmedWeddingAnniversay = formattedWeddingAnniversary.split('.').first + 'Z';
 
     final body = json.encode({
       'user_id': widget.userId,
@@ -62,6 +79,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
       'gender': gender,
       'profession': professionController.text,
     });
+
+
 
     try {
 
