@@ -147,8 +147,8 @@ class _UserPageState extends State<UserPage> {
                 _navigateToAddDonation();
               } else if (value == 'My Donations'){
                 _navigateToMyDonations();
-              } else if (value == 'Add News'){
-
+              } else if (value == 'My Profile'){
+                _navigateToMyProfile();
               }
             },
             itemBuilder: (BuildContext context) {
@@ -160,7 +160,7 @@ class _UserPageState extends State<UserPage> {
                   );
                 }).toList();
               } else {
-                return {'About', 'My Donations', 'Log Out'}.map((String choice) {
+                return {'About', 'My Donations','My Profile', 'Log Out'}.map((String choice) {
                   return PopupMenuItem<String>(
                     value: choice,
                     child: Text(choice),

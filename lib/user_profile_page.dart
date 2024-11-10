@@ -19,10 +19,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
   late TextEditingController _professionController;
   late TextEditingController _dateOfBirthController;
   late TextEditingController _maritalStatusController;
+  late TextEditingController _marriageDateController;
   String? _gender;
 
   bool _isLoading = false;
   bool _isUpdated = false;
+  String? _maritalStatus;
+  bool _isMarried = false;
 
   @override
   void initState() {
@@ -31,6 +34,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _professionController = TextEditingController();
     _dateOfBirthController = TextEditingController();
     _maritalStatusController = TextEditingController();
+    _marriageDateController = TextEditingController();
 
     // Fetch the user profile data
     _fetchUserProfile();
@@ -41,23 +45,29 @@ class _UserProfilePageState extends State<UserProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('userToken') ?? '';
 
-    final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile/${widget.userId}'; // Adjust endpoint
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile/${widget.userId}';
     final response = await http.get(
       Uri.parse(url),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': '$token',
       },
     );
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+      final jsonData = json.decode(response.body);
+      final data = jsonData['user_profile'];
+
       setState(() {
         _fullNameController.text = data['full_name'];
         _professionController.text = data['profession'];
         _dateOfBirthController.text = data['date_of_birth'];
         _maritalStatusController.text = data['marital_status'];
         _gender = data['gender'];
+        if (data['marital_status'] == 'Married') {
+          _isMarried = true;
+          _marriageDateController.text = data['wedding_anniversary'] ?? '';
+        }
       });
     } else {
       print('Failed to load user profile');
@@ -81,13 +91,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
       'gender': _gender,
       'profession': _professionController.text,
       'marital_status': _maritalStatusController.text,
+      'marriage_date': _isMarried ? _marriageDateController.text : null,
     });
 
     final response = await http.put(
       Uri.parse(url),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization':  '$token',
       },
       body: body,
     );
@@ -111,6 +122,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _professionController.dispose();
     _dateOfBirthController.dispose();
     _maritalStatusController.dispose();
+    _marriageDateController.dispose();
     super.dispose();
   }
 
@@ -182,19 +194,44 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 'Marital Status',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              TextFormField(
-                controller: _maritalStatusController,
-                decoration: InputDecoration(
-                  hintText: 'Enter your marital status',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your marital status';
-                  }
-                  return null;
+              DropdownButton<String>(
+                value: _maritalStatusController.text.isNotEmpty
+                    ? _maritalStatusController.text
+                    : null,
+                hint: Text('Select Marital Status'),
+                items: ['Single', 'Married']
+                    .map((status) => DropdownMenuItem(
+                  value: status,
+                  child: Text(status),
+                ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _maritalStatusController.text = value ?? '';
+                    _isMarried = value == 'Married';
+                  });
                 },
               ),
               SizedBox(height: 20),
+              if (_isMarried) ...[
+                Text(
+                  'Marriage Date',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                TextFormField(
+                  controller: _marriageDateController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your marriage date (YYYY-MM-DD)',
+                  ),
+                  validator: (value) {
+                    if (_isMarried && (value == null || value.isEmpty)) {
+                      return 'Please enter your marriage date';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+              ],
               Text(
                 'Gender',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
