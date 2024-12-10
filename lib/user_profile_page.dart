@@ -26,6 +26,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   bool _isUpdated = false;
   String? _maritalStatus;
   bool _isMarried = false;
+  int? _profileId;
 
   @override
   void initState() {
@@ -40,12 +41,38 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _fetchUserProfile();
   }
 
+  // Method to show date picker and set the date in the controller
+  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
   // Fetch user profile details
   Future<void> _fetchUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('userToken') ?? '';
 
     final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile/${widget.userId}';
+
+    // Format date_of_birth to ISO format if not empty
+    String formattedDateOfBirth = _dateOfBirthController.text.isNotEmpty
+        ? DateTime.parse(_dateOfBirthController.text).toIso8601String().split('.').first + 'Z'
+        : '';
+
+    // Format marriage_date to ISO format if user is married
+    String? formattedMarriageDate = _isMarried && _marriageDateController.text.isNotEmpty
+        ? DateTime.parse(_marriageDateController.text).toIso8601String().split('.').first + 'Z'
+        : null;
+
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -59,6 +86,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       final data = jsonData['user_profile'];
 
       setState(() {
+        _profileId = data['profile_id'];
         _fullNameController.text = data['full_name'];
         _professionController.text = data['profession'];
         _dateOfBirthController.text = data['date_of_birth'];
@@ -83,8 +111,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('userToken') ?? '';
 
-    final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile/update';
+    final url = '${dotenv.env['BACKEND_URL']}/api/user/user-profile';
     final body = json.encode({
+      'profile_id': _profileId,
       'user_id': widget.userId,
       'full_name': _fullNameController.text,
       'date_of_birth': _dateOfBirthController.text,
@@ -93,6 +122,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
       'marital_status': _maritalStatusController.text,
       'marriage_date': _isMarried ? _marriageDateController.text : null,
     });
+
+    print("Update Body: $body");
 
     final response = await http.put(
       Uri.parse(url),
@@ -103,11 +134,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
       body: body,
     );
 
+    final responseStatus = response.statusCode;
     if (response.statusCode == 200) {
       setState(() {
         _isUpdated = true;
       });
     } else {
+      print("response status: $responseStatus");
       print('Failed to update profile');
     }
 
@@ -220,6 +253,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
                 TextFormField(
                   controller: _marriageDateController,
+                  readOnly: true,
+                  onTap: () => _selectDate(context, _marriageDateController),
                   decoration: InputDecoration(
                     hintText: 'Enter your marriage date (YYYY-MM-DD)',
                   ),

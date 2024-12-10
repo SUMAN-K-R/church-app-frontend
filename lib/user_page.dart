@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:church_app/all_donations.dart';
 
 
 class UserPage extends StatefulWidget {
@@ -42,10 +43,9 @@ class _UserPageState extends State<UserPage> {
       },
     );
 
-
-
     if (response.statusCode == 200) {
       setState(() {
+        totalDonations = 0;
         totalDonations = json.decode(response.body)['donations']; // Adjust based on actual response
       });
     } else {
@@ -93,6 +93,14 @@ class _UserPageState extends State<UserPage> {
       }
     });
   }
+
+  void _navigateToAllDonations() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AllDonationsPage()), // Push to AllDonationsPage
+    );
+  }
+
 
 
   // Add this method in the UserPage class
@@ -149,6 +157,8 @@ class _UserPageState extends State<UserPage> {
                 _navigateToMyDonations();
               } else if (value == 'My Profile'){
                 _navigateToMyProfile();
+              } else if (value == 'All Donations'){
+                _navigateToAllDonations();
               }
             },
             itemBuilder: (BuildContext context) {

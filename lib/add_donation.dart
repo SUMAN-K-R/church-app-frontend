@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddDonationPage extends StatefulWidget {
@@ -94,12 +92,19 @@ class _AddDonationPageState extends State<AddDonationPage> {
     );
 
     if (response.statusCode == 200) {
+      // Show a success message and reset the form
+      _showDialog('Success', 'Donation added successfully');
 
-      Navigator.pop(context, true);
-      print('Donation added successfully');
-
-      _showDialog('success', 'donation added successfully');
+      // Clear the form fields and reset the state
+      setState(() {
+        selectedUserId = null;
+        selectedPurpose = 'Medical Support';
+        amountController.clear();
+        searchController.clear();
+        filteredUsers = users; // Reset the list to show all users
+      });
     } else {
+      _showDialog('Failed', 'Failed to add donation');
       print('Failed to add donation');
     }
   }
@@ -123,7 +128,6 @@ class _AddDonationPageState extends State<AddDonationPage> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -223,6 +227,8 @@ class _AddDonationPageState extends State<AddDonationPage> {
                   onPressed: () {
                     if (selectedUserId != null && amountController.text.isNotEmpty) {
                       _addDonation();
+                    } else {
+                      _showDialog('Validation Error', 'Please select a user and enter a donation amount');
                     }
                   },
                   child: Text(
